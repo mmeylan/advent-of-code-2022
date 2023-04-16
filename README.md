@@ -6,7 +6,7 @@ https://adventofcode.com/2022
 
 ```bash
 # runs day 1
-cargo run 1
+cargo run day1
 ```
 
 ## How to run a challenge tests
