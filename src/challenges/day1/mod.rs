@@ -1,5 +1,9 @@
+use crate::challenges::utils::read_file;
+
 pub fn run() {
-    println!("Day 1 running...")
+    let input = read_file("src/challenges/day1/input.txt");
+    let calories = find_next_meal(input.as_str());
+    println!("Found {} calories in the richest elf", calories);
 }
 
 fn parse_elf_input(input: &str) -> Vec<Elf> {
