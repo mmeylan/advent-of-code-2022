@@ -1,14 +1,15 @@
 extern crate core;
 
-mod challenges;
-
 use std::env;
+
+mod challenges;
 
 fn main() {
     println!("Welcome to the advent of code 2022 !");
     let day = parse_args();
     match day.as_str() {
         "day1" => challenges::day1::run(),
+        "day2" => challenges::day2::run(),
         _ => println!("Module not found, are you sure you are running a valid challenge?")
     }
 }
