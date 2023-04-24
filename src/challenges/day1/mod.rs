@@ -2,8 +2,12 @@ use crate::challenges::utils::read_file;
 
 pub fn run() {
     let input = read_file("src/challenges/day1/input.txt");
-    let calories = find_next_meal(input.as_str());
-    println!("Found {} calories in the richest elf", calories);
+    let top_elf = find_top_carrier(input.as_str());
+    println!("Found {} calories in the richest elf", top_elf.carried_calories);
+
+    let top_elves = find_top_n_carriers(input.as_str(), 3);
+    let total = top_elves.iter().fold(0, |agg, x| agg + x.carried_calories);
+    println!("Found {} calories in the richest elves in phase 2", total);
 }
 
 fn parse_elf_input(input: &str) -> Vec<Elf> {
@@ -25,16 +29,17 @@ fn parse_elf_input(input: &str) -> Vec<Elf> {
     elves
 }
 
-fn find_next_meal(input: &str) -> i32 {
-    parse_elf_input(input).iter().fold(0, |calories, elf| {
-        if elf.carried_calories > calories {
-            elf.carried_calories
-        } else {
-            calories
-        }
-    })
+fn find_top_carrier(input: &str) -> Elf {
+    find_top_n_carriers(input, 1).first().unwrap().clone()
 }
 
+fn find_top_n_carriers(input: &str, n: usize) -> Vec<Elf> {
+    let mut elves = parse_elf_input(input);
+    elves.sort_by(|a, b| a.carried_calories.cmp(&b.carried_calories).reverse());
+    elves[..=n - 1].to_vec()
+}
+
+#[derive(Clone)]
 struct Elf {
     carried_calories: i32,
 }
@@ -54,10 +59,10 @@ impl Elf {
 
 #[cfg(test)]
 mod day1_tests {
-    use crate::challenges::day1::find_next_meal;
+    use crate::challenges::day1::{find_top_carrier, find_top_n_carriers};
 
     #[test]
-    fn dumb_test() {
+    fn phase_1_example() {
         let input = "1000
 2000
 3000
@@ -73,7 +78,32 @@ mod day1_tests {
 
 10000";
 
-        let most = find_next_meal(input);
-        assert_eq!(most, 24000);
+        let most = find_top_carrier(input);
+        assert_eq!(most.carried_calories, 24000);
+    }
+
+    #[test]
+    fn phase_2_example() {
+        let input = "1000
+2000
+3000
+
+4000
+
+5000
+6000
+
+7000
+8000
+9000
+
+10000";
+
+        let top_3 = find_top_n_carriers(input, 3);
+        println!("top1 elf {}", top_3.get(0).unwrap().carried_calories);
+        println!("top2 elf {}", top_3.get(1).unwrap().carried_calories);
+        println!("top3 elf {}", top_3.get(2).unwrap().carried_calories);
+        println!("num elf {}", top_3.len());
+        assert_eq!(top_3.iter().fold(0, |agg, x| agg + x.carried_calories), 45000);
     }
 }
