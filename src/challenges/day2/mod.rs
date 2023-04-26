@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::challenges::utils::{LINE_ENDING, read_file};
+use crate::challenges::utils::{read_file, LINE_ENDING};
 
 pub fn run() {
     let input = read_file("src/challenges/day2/input.txt");
@@ -10,10 +10,11 @@ pub fn run() {
 }
 
 fn parse_strategy_guide(input: &str) -> StrategyGuide {
-    let sequence = input.split(LINE_ENDING).map(|line| parse_strategy_line(line)).collect();
-    StrategyGuide {
-        sequence
-    }
+    let sequence = input
+        .split(LINE_ENDING)
+        .map(|line| parse_strategy_line(line))
+        .collect();
+    StrategyGuide { sequence }
 }
 
 fn parse_strategy_line(line: &str) -> Round {
@@ -55,7 +56,10 @@ fn run_round(round: &Round) -> i32 {
 }
 
 fn run_strategy(strategy: StrategyGuide) -> i32 {
-    strategy.sequence.iter().fold(0, |score, round| score + run_round(round))
+    strategy
+        .sequence
+        .iter()
+        .fold(0, |score, round| score + run_round(round))
 }
 
 #[derive(Clone, Debug)]
@@ -69,9 +73,13 @@ impl Move {
     fn run(&self, other: &Self) -> i32 {
         match (self, other) {
             // win
-            (Self::Rock, Self::Scissor) | (Self::Scissor, Self::Paper) | (Self::Paper, Self::Rock) => 6,
+            (Self::Rock, Self::Scissor)
+            | (Self::Scissor, Self::Paper)
+            | (Self::Paper, Self::Rock) => 6,
             // loss
-            (Self::Scissor, Self::Rock) | (Self::Paper, Self::Scissor) | (Self::Rock, Self::Paper) => 0,
+            (Self::Scissor, Self::Rock)
+            | (Self::Paper, Self::Scissor)
+            | (Self::Rock, Self::Paper) => 0,
             // draw
             _ => 3,
         }
