@@ -1,65 +1,11 @@
-use std::collections::HashMap;
-use std::fmt;
-
 use crate::challenges::utils::{read_file, LINE_ENDING};
 
 pub fn run() {
     let input = read_file("src/challenges/day2/input.txt");
-    let strategy = parse_strategy_guide(input.as_str());
-    println!("Result phase 1 = {}", run_strategy(strategy));
-}
-
-fn parse_strategy_guide(input: &str) -> StrategyGuide {
-    let sequence = input
-        .split(LINE_ENDING)
-        .map(|line| parse_strategy_line(line))
-        .collect();
-    StrategyGuide { sequence }
-}
-
-fn parse_strategy_line(line: &str) -> Round {
-    let mut elements = line.split(" ");
-    let enemy = enemy_move(elements.clone().nth(0).unwrap());
-    let ally = ally_move(elements.nth(1).unwrap());
-    (enemy, ally)
-}
-
-fn enemy_move(m: &str) -> Move {
-    match m {
-        "A" => Move::Rock,
-        "B" => Move::Paper,
-        "C" => Move::Scissor,
-        _ => panic!("Can't match enemy move"),
-    }
-}
-
-fn ally_move(m: &str) -> Move {
-    match m {
-        "X" => Move::Rock,
-        "Y" => Move::Paper,
-        "Z" => Move::Scissor,
-        _ => panic!("Can't match enemy move"),
-    }
-}
-
-fn run_round(round: &Round) -> i32 {
-    let enemy = &round.0;
-    let ally = &round.1;
-
-    let move_score = match ally {
-        Move::Rock => 1,
-        Move::Paper => 2,
-        Move::Scissor => 3,
-    };
-    let play_score = ally.run(&enemy);
-    move_score + play_score
-}
-
-fn run_strategy(strategy: StrategyGuide) -> i32 {
-    strategy
-        .sequence
-        .iter()
-        .fold(0, |score, round| score + run_round(round))
+    let strategy = StrategyGuideP1 {};
+    println!("Result phase 1 = {}", strategy.run(input.as_str()));
+    let strategy2: StrategyGuideP2 = StrategyGuideP2 {};
+    println!("Result phase 2 = {}", strategy2.run(input.as_str()));
 }
 
 #[derive(Clone, Debug)]
@@ -88,23 +34,145 @@ impl Move {
 
 type Round = (Move, Move);
 
-#[derive(Debug)]
-struct StrategyGuide {
-    sequence: Vec<Round>,
+fn play(round: &Round) -> i32 {
+    let enemy = &round.0;
+    let ally = &round.1;
+
+    let move_score = match ally {
+        Move::Rock => 1,
+        Move::Paper => 2,
+        Move::Scissor => 3,
+    };
+    let play_score = ally.run(&enemy);
+    move_score + play_score
+}
+
+trait StrategyGuide {
+    fn run(&self, strategy_script: &str) -> i32;
+
+    fn parse_command<'a>(&self, line: &'a str) -> (&'a str, &'a str) {
+        let mut elements = line.split(" ");
+        let enemy = elements.clone().nth(0).unwrap();
+        let ally = elements.nth(1).unwrap();
+        (enemy, ally)
+    }
+}
+
+struct StrategyGuideP1 {}
+
+impl StrategyGuideP1 {
+    fn enemy_move(&self, m: &str) -> Move {
+        match m {
+            "A" => Move::Rock,
+            "B" => Move::Paper,
+            "C" => Move::Scissor,
+            _ => panic!("Can't match enemy move"),
+        }
+    }
+
+    fn ally_move(&self, m: &str) -> Move {
+        match m {
+            "X" => Move::Rock,
+            "Y" => Move::Paper,
+            "Z" => Move::Scissor,
+            _ => panic!("Can't match enemy move"),
+        }
+    }
+
+    fn round(&self, enemy: &str, ally: &str) -> Round {
+        (self.enemy_move(enemy), self.ally_move(ally))
+    }
+}
+
+impl StrategyGuide for StrategyGuideP1 {
+    fn run(&self, strategy_script: &str) -> i32 {
+        strategy_script
+            .split(LINE_ENDING)
+            .map(|line| self.parse_command(line))
+            .map(|(enemy, ally)| self.round(enemy, ally))
+            .fold(0, |score, round| score + play(&round))
+    }
+}
+
+struct StrategyGuideP2 {}
+
+impl StrategyGuideP2 {
+    fn enemy_move(&self, m: &str) -> Move {
+        match m {
+            "A" => Move::Rock,
+            "B" => Move::Paper,
+            "C" => Move::Scissor,
+            _ => panic!("Can't match enemy move"),
+        }
+    }
+
+    fn ally_move(&self, m: &str, enemy_move: &Move) -> Move {
+        match m {
+            "X" => self.lose(enemy_move),
+            "Y" => self.tie(enemy_move),
+            "Z" => self.win(enemy_move),
+            _ => panic!("Can't match enemy move"),
+        }
+    }
+
+    fn lose(&self, enemy_move: &Move) -> Move {
+        match enemy_move {
+            Move::Paper => Move::Rock,
+            Move::Rock => Move::Scissor,
+            Move::Scissor => Move::Paper,
+        }
+    }
+
+    fn win(&self, enemy_move: &Move) -> Move {
+        match enemy_move {
+            Move::Paper => Move::Scissor,
+            Move::Rock => Move::Paper,
+            Move::Scissor => Move::Rock,
+        }
+    }
+
+    fn tie(&self, enemy_move: &Move) -> Move {
+        return enemy_move.clone();
+    }
+
+    fn round(&self, enemy: &str, ally: &str) -> Round {
+        let enemy_move = self.enemy_move(enemy);
+        let ally_move = self.ally_move(ally, &enemy_move);
+        (enemy_move, ally_move)
+    }
+}
+
+impl StrategyGuide for StrategyGuideP2 {
+    fn run(&self, strategy_script: &str) -> i32 {
+        strategy_script
+            .split(LINE_ENDING)
+            .map(|line| self.parse_command(line))
+            .map(|(enemy, ally)| self.round(enemy, ally))
+            .fold(0, |score, round| score + play(&round))
+    }
 }
 
 #[cfg(test)]
 mod day2_tests {
-    use crate::challenges::day2::{parse_strategy_guide, run_strategy};
-    use crate::challenges::utils::{read_file, read_input_file};
+    use crate::challenges::day2::{StrategyGuide, StrategyGuideP1, StrategyGuideP2};
 
     #[test]
     fn phase_1_example() {
         let input = "A Y
 B X
 C Z";
-        let strategy = parse_strategy_guide(input);
-        println!("Hello {:?}", strategy);
-        assert_eq!(run_strategy(strategy), 15);
+        let strategy = StrategyGuideP1 {};
+        let score = strategy.run(input);
+        assert_eq!(score, 15);
+    }
+
+    #[test]
+    fn phase_2_example() {
+        let input = "A Y
+B X
+C Z";
+        let strategy = StrategyGuideP2 {};
+        let score = strategy.run(input);
+        assert_eq!(score, 12);
     }
 }
